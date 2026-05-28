@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - SIAKAD</title>
+    <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+    <div class="dashboard">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>SIAKAD</h2>
+                <p>Administrasi Sekolah</p>
+            </div>
+            <ul class="sidebar-menu">
+                <li><a href="dashboard.html" class="active">📊 Dashboard</a></li>
+                <li><a href="siswa.html">👨‍🎓 Data Siswa</a></li>
+                <li><a href="guru.html">👨‍🏫 Data Guru</a></li>
+                <li><a href="kelas.html">📚 Kelas</a></li>
+                <li><a href="mapel.html">📖 Mata Pelajaran</a></li>
+                <li><a href="jadwal.html">🕐 Jadwal Pelajaran</a></li>
+                <li><a href="absensi.html">✏️ Absensi</a></li>
+                <li><a href="nilai.html">📝 Nilai/Rapor</a></li>
+                <li><a href="profile.html">⚙️ Profile</a></li>
+            </ul>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="top-bar">
+                <h1>Dashboard</h1>
+                <div class="user-info">
+                    <div class="user-profile">
+                        <p><strong id="userName">Admin</strong></p>
+                        <p id="userRole" style="font-size: 12px;">Administrator</p>
+                    </div>
+                    <button class="btn-logout" onclick="logout()">Logout</button>
+                </div>
+            </div>
+
+            <!-- Statistics -->
+            <div class="stats-grid" id="statsGrid">
+                <div class="loading"><div class="spinner"></div></div>
+            </div>
+
+            <!-- Recent Data -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 30px;">
+                <!-- Recent Siswa -->
+                <div class="table-container">
+                    <div class="table-header">
+                        <h2>Siswa Terbaru</h2>
+                    </div>
+                    <div style="overflow-x: auto;">
+                        <table id="recentSiswaTable">
+                            <thead>
+                                <tr>
+                                    <th>NIS</th>
+                                    <th>Nama</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recentSiswaBody">
+                                <tr><td colspan="2" class="text-center">Memuat...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Recent Nilai -->
+                <div class="table-container">
+                    <div class="table-header">
+                        <h2>Nilai Terbaru</h2>
+                    </div>
+                    <div style="overflow-x: auto;">
+                        <table id="recentNilaiTable">
+                            <thead>
+                                <tr>
+                                    <th>Siswa</th>
+                                    <th>Mata Pelajaran</th>
+                                    <th>Nilai</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recentNilaiBody">
+                                <tr><td colspan="3" class="text-center">Memuat...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="../assets/js/script.js"></script>
+    <script>
+        // Load dashboard data
+        async function loadDashboard() {
+            const user = getCurrentUser();
+            document.getElementById('userName').textContent = user.username;
+            document.getElementById('userRole').textContent = 
+                user.role === 'admin' ? 'Administrator' : 
+                user.role === 'guru' ? 'Guru' : 'Siswa';
+
+            const response = await fetchAPI('dashboard.php');
+            
+            if (response.status === 'success') {
+                const data = response.data;
+                
+                // Display statistics
+                const statsHTML = `
+                    <div class="stat-card">
+                        <div class="stat-info">
+                            <h3>Total Siswa</h3>
+                            <div class="number">${data.statistics.total_siswa}</div>
+                        </div>
+                        <div class="stat-icon">👨‍🎓</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-info">
+                            <h3>Total Guru</h3>
+                            <div class="number">${data.statistics.total_guru}</div>
+                        </div>
+                        <div class="stat-icon">👨‍🏫</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-info">
+                            <h3>Total Kelas</h3>
+                            <div class="number">${data.statistics.total_kelas}</div>
+                        </div>
+                        <div class="stat-icon">📚</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-info">
+                            <h3>Mata Pelajaran</h3>
+                            <div class="number">${data.statistics.total_mapel}</div>
+                        </div>
+                        <div class="stat-icon">📖</div>
+                    </div>
+                `;
+                document.getElementById('statsGrid').innerHTML = statsHTML;
+                
+                // Display recent siswa
+                if (data.recent_siswa && data.recent_siswa.length > 0) {
+                    const siswaHTML = data.recent_siswa.map(s => `
+                        <tr>
+                            <td>${s.nis}</td>
+                            <td>${s.nama_lengkap}</td>
+                        </tr>
+                    `).join('');
+                    document.getElementById('recentSiswaBody').innerHTML = siswaHTML;
+                } else {
+                    document.getElementById('recentSiswaBody').innerHTML = 
+                        '<tr><td colspan="2" class="text-center">Tidak ada data</td></tr>';
+                }
+                
+                // Display recent nilai
+                if (data.recent_nilai && data.recent_nilai.length > 0) {
+                    const nilaiHTML = data.recent_nilai.map(n => `
+                        <tr>
+                            <td>${n.nama_lengkap}</td>
+                            <td>${n.nama_mapel}</td>
+                            <td><span class="badge badge-info">${n.nilai_akhir}</span></td>
+                        </tr>
+                    `).join('');
+                    document.getElementById('recentNilaiBody').innerHTML = nilaiHTML;
+                } else {
+                    document.getElementById('recentNilaiBody').innerHTML = 
+                        '<tr><td colspan="3" class="text-center">Tidak ada data</td></tr>';
+                }
+            }
+        }
+        
+        // Load on page load
+        loadDashboard();
+    </script>
+</body>
+</html>
