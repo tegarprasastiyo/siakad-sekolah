@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Siswa - SIAKAD</title>
+    <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+    <div class="dashboard">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>SIAKAD</h2>
+                <p>Administrasi Sekolah</p>
+            </div>
+            <ul class="sidebar-menu">
+                <li><a href="dashboard.html">📊 Dashboard</a></li>
+                <li><a href="siswa.html" class="active">👨‍🎓 Data Siswa</a></li>
+                <li><a href="guru.html">👨‍🏫 Data Guru</a></li>
+                <li><a href="kelas.html">📚 Kelas</a></li>
+                <li><a href="mapel.html">📖 Mata Pelajaran</a></li>
+                <li><a href="jadwal.html">🕐 Jadwal Pelajaran</a></li>
+                <li><a href="absensi.html">✏️ Absensi</a></li>
+                <li><a href="nilai.html">📝 Nilai/Rapor</a></li>
+                <li><a href="profile.html">⚙️ Profile</a></li>
+            </ul>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="top-bar">
+                <h1>Data Siswa</h1>
+                <div class="user-info">
+                    <div class="user-profile">
+                        <p><strong id="userName">Admin</strong></p>
+                    </div>
+                    <button class="btn-logout" onclick="logout()">Logout</button>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <div class="table-header">
+                    <h2>Daftar Siswa</h2>
+                    <button class="btn-primary" onclick="openAddModal()">+ Tambah Siswa</button>
+                </div>
+                <div style="overflow-x: auto;">
+                    <table id="siswaTable">
+                        <thead>
+                            <tr>
+                                <th>NIS</th>
+                                <th>Nama</th>
+                                <th>Kelas</th>
+                                <th>Jenis Kelamin</th>
+                                <th>Nomor Telepon</th>
+                                <th>Status</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="siswaBody">
+                            <tr><td colspan="7" class="text-center">Memuat...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal Tambah/Edit Siswa -->
+    <div id="siswaModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Tambah Siswa</h2>
+                <span class="close" onclick="closeModal('siswaModal')">&times;</span>
+            </div>
+            <form id="siswaForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>NIS</label>
+                        <input type="text" id="nis" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Username</label>
+                        <input type="text" id="username" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input type="password" id="password" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" id="email" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Nama Lengkap</label>
+                        <input type="text" id="nama_lengkap" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Jenis Kelamin</label>
+                        <select id="jenis_kelamin" required>
+                            <option value="">Pilih...</option>
+                            <option value="L">Laki-laki</option>
+                            <option value="P">Perempuan</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Tanggal Lahir</label>
+                        <input type="date" id="tanggal_lahir">
+                    </div>
+                    <div class="form-group">
+                        <label>Kelas</label>
+                        <select id="kelas_id">
+                            <option value="">Pilih Kelas...</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row form-group full">
+                    <label>Alamat</label>
+                    <textarea id="alamat" rows="3"></textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Nomor Telepon</label>
+                        <input type="text" id="nomor_telepon">
+                    </div>
+                    <div class="form-group">
+                        <label>Nama Ayah</label>
+                        <input type="text" id="nama_ayah">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Nama Ibu</label>
+                        <input type="text" id="nama_ibu">
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn-submit">Simpan</button>
+                    <button type="button" class="btn-cancel" onclick="closeModal('siswaModal')">Batal</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="../assets/js/script.js"></script>
+    <script>
+        let siswaList = [];
+        let currentSiswaId = null;
+
+        // Load siswa data
+        async function loadSiswa() {
+            showLoading('siswaBody');
+            const response = await fetchAPI('siswa.php?action=list');
+            
+            if (response.status === 'success') {
+                siswaList = response.data;
+                displaySiswa();
+            } else {
+                showEmpty('siswaBody', 'Gagal memuat data');
+            }
+        }
+
+        // Display siswa in table
+        function displaySiswa() {
+            if (siswaList.length === 0) {
+                document.getElementById('siswaBody').innerHTML = 
+                    '<tr><td colspan="7" class="text-center">Tidak ada data siswa</td></tr>';
+                return;
+            }
+
+            const html = siswaList.map(siswa => `
+                <tr>
+                    <td>${siswa.nis}</td>
+                    <td>${siswa.nama_lengkap}</td>
+                    <td>${siswa.nama_kelas || '-'}</td>
+                    <td>${siswa.jenis_kelamin === 'L' ? 'Laki-laki' : 'Perempuan'}</td>
+                    <td>${siswa.nomor_telepon || '-'}</td>
+                    <td><span class="badge badge-success">${siswa.status}</span></td>
+                    <td>
+                        <button class="btn-secondary" onclick="editSiswa(${siswa.id})">Edit</button>
+                        <button class="btn-danger" onclick="deleteSiswa(${siswa.id})">Hapus</button>
+                    </td>
+                </tr>
+            `).join('');
+
+            document.getElementById('siswaBody').innerHTML = html;
+        }
+
+        // Open add modal
+        async function openAddModal() {
+            currentSiswaId = null;
+            document.getElementById('modalTitle').textContent = 'Tambah Siswa';
+            document.getElementById('siswaForm').reset();
+            await loadKelasOptions();
+            openModal('siswaModal');
+        }
+
+        // Load kelas options
+        async function loadKelasOptions() {
+            const response = await fetchAPI('kelas.php?action=list');
+            if (response.status === 'success') {
+                const options = response.data.map(k => 
+                    `<option value="${k.id}">${k.nama_kelas}</option>`
+                ).join('');
+                document.getElementById('kelas_id').innerHTML = 
+                    '<option value="">Pilih Kelas...</option>' + options;
+            }
+        }
+
+        // Edit siswa
+        async function editSiswa(id) {
+            const siswa = siswaList.find(s => s.id === id);
+            if (!siswa) return;
+
+            currentSiswaId = id;
+            document.getElementById('modalTitle').textContent = 'Edit Siswa';
+            
+            document.getElementById('nis').value = siswa.nis;
+            document.getElementById('username').value = siswa.username;
+            document.getElementById('email').value = siswa.email;
+            document.getElementById('nama_lengkap').value = siswa.nama_lengkap;
+            document.getElementById('jenis_kelamin').value = siswa.jenis_kelamin;
+            document.getElementById('tanggal_lahir').value = siswa.tanggal_lahir;
+            document.getElementById('kelas_id').value = siswa.kelas_id;
+            document.getElementById('alamat').value = siswa.alamat;
+            document.getElementById('nomor_telepon').value = siswa.nomor_telepon;
+            document.getElementById('nama_ayah').value = siswa.nama_ayah;
+            document.getElementById('nama_ibu').value = siswa.nama_ibu;
+            
+            document.getElementById('password').required = false;
+            await loadKelasOptions();
+            openModal('siswaModal');
+        }
+
+        // Delete siswa
+        async function deleteSiswa(id) {
+            if (!confirm('Apakah Anda yakin ingin menghapus data ini?')) return;
+
+            const response = await fetchAPI('siswa.php?action=delete', 'DELETE', { id });
+            if (response.status === 'success') {
+                showNotification('Data berhasil dihapus', 'success');
+                loadSiswa();
+            } else {
+                showNotification(response.message, 'danger');
+            }
+        }
+
+        // Save siswa
+        document.getElementById('siswaForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const data = {
+                nis: document.getElementById('nis').value,
+                username: document.getElementById('username').value,
+                email: document.getElementById('email').value,
+                nama_lengkap: document.getElementById('nama_lengkap').value,
+                jenis_kelamin: document.getElementById('jenis_kelamin').value,
+                tanggal_lahir: document.getElementById('tanggal_lahir').value,
+                alamat: document.getElementById('alamat').value,
+                nomor_telepon: document.getElementById('nomor_telepon').value,
+                nama_ayah: document.getElementById('nama_ayah').value,
+                nama_ibu: document.getElementById('nama_ibu').value,
+                kelas_id: document.getElementById('kelas_id').value,
+                password: document.getElementById('password').value
+            };
+
+            let response;
+            if (currentSiswaId) {
+                data.id = currentSiswaId;
+                response = await fetchAPI('siswa.php?action=update', 'PUT', data);
+            } else {
+                response = await fetchAPI('siswa.php?action=create', 'POST', data);
+            }
+
+            if (response.status === 'success') {
+                showNotification(response.message, 'success');
+                closeModal('siswaModal');
+                loadSiswa();
+            } else {
+                showNotification(response.message, 'danger');
+            }
+        });
+
+        // Load on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            const user = getCurrentUser();
+            document.getElementById('userName').textContent = user.username;
+            loadSiswa();
+        });
+    </script>
+</body>
+</html>
